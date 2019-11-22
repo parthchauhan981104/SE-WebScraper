@@ -5,9 +5,14 @@ from fake_useragent import UserAgent
 from bs4 import BeautifulSoup
 import pprint
 import re
+from collections import OrderedDict
 from selenium import webdriver
 import sqlite3
 from time import sleep
+import smtplib, ssl
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
+
 
 # ----------------------------------------------------------------------------------------------------------------------
 
@@ -17,7 +22,11 @@ class Scraper(object):
     def __init__(self):
         self.ua = UserAgent()
         self.header = {'user-agent': self.ua.chrome}
-        self.init_db()
+        # self.init_db()
+        self.options = webdriver.ChromeOptions()
+        self.options.add_argument('--ignore-certificate-errors')
+        self.options.add_argument('--incognito')
+        self.options.add_argument('--headless')
 
     # ----------------------------------------------DATABASE CODE STARTS------------------------------------------------
 
@@ -32,20 +41,13 @@ class Scraper(object):
                          ID INTEGER PRIMARY KEY NOT NULL,
                          NAME           TEXT    NOT NULL,
                          USERNAME       CHAR(50),
-                         PASSWORD         CHAR(50));''')
+                         EMAIL          CHAR(50),
+                         PASSWORD         CHAR(50),
+                         PREFERENCES         CHAR(50)));''')
         print("Table created successfully")
 
-        cur.execute("INSERT INTO USERS (NAME,USERNAME,PASSWORD) \
-                      VALUES ('Paul', 'California', 'lala' )");
-
-        cur.execute("INSERT INTO USERS (NAME,USERNAME,PASSWORD) \
-                      VALUES ('Allen', 'Texas', 'ljwdsn' )");
-
-        cur.execute("INSERT INTO USERS (NAME,USERNAME,PASSWORD) \
-                      VALUES ('Teddy', 'Norway', 'kasd' )");
-
-        cur.execute("INSERT INTO USERS (NAME,USERNAME,PASSWORD) \
-                      VALUES ('Mark', 'Rich-Mond ', 'kadh' )");
+        cur.execute("INSERT INTO USERS (NAME, USERNAME, EMAIL, PASSWORD, PREFERENCES) \
+                      VALUES ('Paul', 'California', 'lala', '' )");
 
         conn.commit()
         print("Records created successfully")
@@ -62,6 +64,58 @@ class Scraper(object):
         conn.close()
 
     # -----------------------------------------------DATABASE CODE ENDS-------------------------------------------------
+
+
+    # ----------------------------------------------EMAIL ALERT - START-------------------------------------------------
+
+    def email(self):
+
+        sender_email = "webscraperQT@gmail.com"
+        receiver_email = "pc828@snu.edu.in"
+        password = "haumluuksjonrtkd"  # app specific password
+
+        message = MIMEMultipart("alternative")
+        message["Subject"] = "multipart test"
+        message["From"] = sender_email
+        message["To"] = receiver_email
+
+        # Create the plain-text and HTML version of your message
+        text = """\
+        Hi,
+        How are you?
+        Real Python has many great tutorials:
+        www.realpython.com"""
+        html = """\
+        <html>
+          <body>
+            <p>Hi,<br>
+               How are you?<br>
+               <a href="http://www.realpython.com">Real Python</a> 
+               has many great tutorials.
+            </p>
+          </body>
+        </html>
+        """
+
+        # Turn these into plain/html MIMEText objects
+        part1 = MIMEText(text, "plain")
+        part2 = MIMEText(html, "html")
+
+        # Add HTML/plain-text parts to MIMEMultipart message
+        # The email client will try to render the last part first
+        message.attach(part1)
+        message.attach(part2)
+
+        # Create secure connection with server and send email
+        context = ssl.create_default_context()
+        with smtplib.SMTP_SSL("smtp.gmail.com", 465, context=context) as server:
+            server.login(sender_email, password)
+            server.sendmail(
+                sender_email, receiver_email, message.as_string()
+            )
+
+    # -------------------------------------------------EMAIL ALERT - END------------------------------------------------
+
 
     # -------------------------------------------SNU Mess Menu Scraper - START------------------------------------------
     def mess_menu(self):
@@ -134,7 +188,7 @@ class Scraper(object):
     # -----------------------------------------Brainy Quote Scraper - START---------------------------------------------
     def quote(self):
 
-        page = requests.get('https://www.brainyquote.com/quote_of_the_day', timeout=3)
+        page = requests.get('https://www.brainyquote.com/quote_of_the_day', timeout=5)
 
         # Extracting the source code of the page.
         data = page.text
@@ -157,7 +211,7 @@ class Scraper(object):
     # ----------------------------------------Times of India Scraper - START--------------------------------------------
     def news(self):
 
-        page = requests.get('https://timesofindia.indiatimes.com/briefs', timeout=3)
+        page = requests.get('https://timesofindia.indiatimes.com/briefs', timeout=5)
 
         # Extracting the source code of the page.
         data = page.text
@@ -177,14 +231,9 @@ class Scraper(object):
     # ----------------------------------------Times of India Scraper - END----------------------------------------------
 
     # ------------------------------------------IMDB Scraper - START----------------------------------------------------
-    def movie(self):
+    def imdb(self):
 
-        options = webdriver.ChromeOptions()
-        options.add_argument('--ignore-certificate-errors')
-        options.add_argument('--incognito')
-        options.add_argument('--headless')
-        driver = webdriver.Chrome(options=options)
-
+        driver = webdriver.Chrome(options=self.options)
         movie_name = "blackkklansman"
         driver.get('https://www.imdb.com/find?q=' + movie_name.replace(" ", "+"))
 
@@ -249,12 +298,82 @@ class Scraper(object):
 
     # -------------------------------------------IMDB Scraper - END-----------------------------------------------------
 
+    # -------------------------------------Paytm Movies Scraper - START-------------------------------------------------
+
+    def paytm(self):
+
+        cities = "AboharAchampetAcharapakkamAddankiAdilabadAdipurAdoniAdoorAgar MalwaAgartalaAgraAhmedabadAhmedgarhAhmednagarAjmerAkaltaraAkividuAklujAkolaAlakodeAlanganallurAlangayamAlangudiAlappuzhaAligarhAllagaddaAllahabadAlmoraAlwarAmalapuramAmalnerAmbajiAmbajogaiAmbalaAmballurAmbasamudramAmbernathAmbikapurAmburAmgaonAmmaiyarkuppamAmmapettaiAmravatiAmritsarAmrohaAnakapalleAnandAnantapurAndulAngamalyAngaraAngulAnjarAnkleshwarAnkolaAnnurAnthiyurArakkonamArambaghArmoorArumbavurAruppukkottaiAsansolAshoknagarAshtamichiraAsikaAswaraopetAtchutapuramAthagarhAtmakurAtmakur-NelloreAtpadiAttiliAtturAurangabadAurangabad BiharAurangabad-West-BengalAvinashiAzamgarhB KothakotaBadamiBadaunBaddiBadepallyBadnagarBadnawarBagahaBagalkotBagbaharaBagepalliBaghapuranaBagnanBahadurgarhBahraichBaiharBaikunthpurBakhrahatBalaghatBalangirBalasoreBalliaBalodBaloda BazarBalrampurBanaganapalliBangaBangarapetBankiBanswadaBapatlaBarabankiBaramatiBarautBardoliBareillyBarejaBargarhBarhalganjBarhiBarmerBarnalaBarshiBarwaniBasmatBasnaBatalaBathindaBatlagunduBayadBazpurBeawarBeedBeguniapadaBelagaviBellampallyBellaryBemetaraBengaluruBenipattiBerachampaBerhampurBestavaripetaBetulBhadohiBhadravatiBhagalpurBhandaraBharuchBhataparaBhatkalBhavnagarBheemgalBhilaiBhilwaraBhimavaramBhiwadiBhiwandiBhiwaniBhokardanBhoodan PochampallyBhopalBhubaneswarBhujBhuntarBhupalapalliBhusawalBhuvanagiriBiaoraBidarBijainagarBijnorBikanerBilaraBilaspurBilgiBilimoraBobbiliBodhanBodiBoisarBokaroBommidiBonakalBorsadBrajrajnagarBramhapuriBulandshahrBuldhanaBunduBurdwanBurhanpurChagalluChalakudyChamarajanagaraChampaChandbaliChandigarhChandragiriChandrapurChangaramkulamChannarayapatnaChanpatiaChapraChatraChebroluCheekaCheepurupalliChelpurChennaiChennurCherlaCherpulasseryCherthalaCherukupalliChevellaCheyyurChhatarpurChhibramauChhindwaraChhota UdaipurChidambaramChikhliChikkaballapuraChilakaluripetChinnamandemChinnamanurChinnasalemChintalapudiChinturuChiplunChipurupalleChiralaChitradurgaChittoorChittorgarhChityalChodavaramChotilaChoutuppalCoimbatoreCooch BeharCuddaloreCuddapahCumbumCuttackD.GannavaramDabhoiDabraDahodDakshinbarasatDalli RajharaDamanDammapetaDamohDandeliDarbhangaDarjeelingDarsiDaryapurDasuyaDausaDavanagereDeesaDehgamDehradunDehri On SoneDelhi/NCRDeogharDeoliDeoriaDevakottaiDevarakadraDevarapalliDewasDhamnodDhampurDhamtariDhanbadDhaneraDharDharamsalaDharapuramDharmajDharmapuriDharmavaramDharuheraDholkaDhoneDhorajiDhuleDhuriDibrugarhDigrasDimapurDinanagarDindigulDomkalDongargarhDorahaDornakalDowlaiswaramDraksharamamDubbakDubrajpurDuggiralaDumkaDurgDurgapurEdappalEdlapaduEkma ChapraEluruErattupettaEriyurErodeEtawahEttumanoorEturnagaramEturunagaramFaizabadFalnaFaridabadFatehabadFatehpurFazilkaFirozepurForbesganjGadagGadarwaraGadchiroliGadhinglajGajapathinagaramGajendragarhGajwelGanapavaramGandhidhamGandhinagarGangavathiGanjbasodaGarhbanailiGarlaGauribidanurGayaGharsanaGhatanjiGhaziabadGhazipurGingeeGiridihGoaGobichettipalayamGodavarikhaniGodhraGogawaGogri JamalpurGokakGokavaramGolaghatGondaGondiaGopalganjGorakhpurGorantlaGotegaonGreater NoidaGudivadaGudur KurnoolGujvailGuledaguddaGummadidalaGunaGundlupetGuntakalGunturGurazalaGurdaspurGurgaonGuruvayurGuwahatiGwaliorHajipurHaldwaniHaliaHalolHamirpurHangalHanuman JunctionHanumangarhHapurHardaHardoiHaridwarHarurHasanparthyHasanpurHassanHathrasHazaribaghHimmatnagarHindaunHingoliHiramandalamHirekerurHisarHolenarasipuraHonnavaraHooghlyHoshiarpurHospetHosurHowrahHubliHusnabadHuvinahadagaliHuzurabadHuzurnagarHyderabadIB TandurIchalkaranjiIchchapuramIdappadiIdarIeejaIndapurIndoreIrinjalakudaIslampurItarsiJadcherlaJagalurJagdalpurJaggampetaJagtialJaipurJaisalmerJajpur RoadJalakandapuramJalalabadJalandharJalgaonJalpaiguriJamiJamkhambhaliyaJamkhedJammalamaduguJammikuntaJammuJamnagarJamnerJamshedpurJamtaraJangaonJangareddygudemJannaramJaoraJasdanJatniJaunpurJawadJayamkondanJehanabadJejuriJetpurJewarJeyporeJhabuaJhajjarJhalawarJhansiJharsugudaJiaganjJindJirapurJodhpurJorhatJunagadhJunnarKadapaKadayamKadiKadiriKadiyamKadthalKaikaluruKaithalKakarapalliKakinadaKalaburagiKalakadKalimpongKallakurichiKalolKalol-PanchmahalKalpettaKalwakurthyKalyanKalyaniKamalapurKamalapur Huzurabad RoadKamanaickenpalayamKamanpurKamareddyKambainallurKanchikacherlaKanchipuramKandukurKangeyamKanhangadKanjiramKannaujKanpurKapadvanjKapadwanjKaradKaraikudiKarambakkudiKaramcheduKareliKarepalliKarimangalamKarimganjKarimnagarKariyadKarjatKarkalaKarnalKarunagappallyKarurKarwarKasargodKasganjKashipurKasibuggaKathipudiKathuaKatiharKatniKatpadiKattanamKattappanaKavaliKaveripattinamKavindapadiKawardhaKecheriKekriKeonjharKesamudramKhachrodKhaddaKhajipetKhalilabadKhambhatKhamgaonKhammamKhanapurKhandelaKhandwaKhannaKharagpurKhargoneKhedbrahmaKhedbrhmabaKhopoliKhurjaKichhaKinathukadavuKishanganjKishangarhKochiKodadKodakaraKodalyKodumurKodungallurKoduruKokrajharKolarKolhapurKolkataKollamKollapurKomarapalayamKondagaonKondlahalliKoothattukulamKopargaonKoratagereKoratlaKorbaKosambaKosgiKotaKota NelloreKotabommaliKotdwarKothacheruvuKothagudemKothakotaKothamangalamKothapetaKotkapuraKotpadKotputliKottarakaraKotturuKovilpattiKovvurKozhikodeKozhinjamparaKrishnagiriKrishnanagarKrishnarajanagaraKrithivennuKrosuruKuakhiaKuchamanKukshiKulithalaiKulittalaiKulluKumbakonamKundliKunkuriKunnamkulamKuppamKurinjipadiKurnoolKurukshetraKurundwadKuzhithuraiLakhimpur-AssamLakhimpur-Uttar-PradeshLakkavaramLalsotLasalgaonLaturLohardagaLonandLonavalaLoniLucknowLudhianaLunawadaLuxettipetMacherlaMachilipatnamMadaluMadanapalleMadhavaramMadhepuraMadhiraMadhugiriMadhurawadaMadikeriMadugulaMaduraiMagadiMahabubabadMahadMahbubnagarMaheshwarMahudhaMakranaMalaMalappuramMaldaMalegaonMalikipuramMalkapurMaloutMalpuraMananthavadyManasaManawarMancherialMandapetaMandi GobindgarhMandsaurMandviMandyaMangaldoiMangaloreManipalManjeriMannargudiMannarkkadMansaManuguruMarayoorMaripedaMarkapuramMaslandapurMathuraMattanurMayiladuthuraiMedakMedarametlaMeerutMehkarMehsanaMerta CityMetpallyMetturMirajMiryalagudaMirzapurMogaMogalthurMohaliMoodabidriMoradabadMorbiMorenaMorindaMothkurMotihariMudalgiMuddebihalMudholMudigereMudigubbaMughalsaraiMukerianMukhedMukkamMuktsarMulkanoorMullanpurMulugMumbaiMundakayamMundraMunigudaMurtizapurMusiriMussoorieMuthurMuvattupuzhaMuzaffarnagarMuzaffarpurMylavaramMysuruNabadwipNadiaNadiadNagaonNagapattinamNagariNagarkurnoolNagaurNagdaNagercoilNagpurNaidupetaNainitalNakhatranaNakodarNalandaNalgondaNallajerlaNallamadaNamakkalNambiyurNandakumarNandedNandigamaNandurbarNandyalNanjanaguduNarasannapetaNarasaraopetNarayankhedNarayanpetNargundNarnaulNarsampetNarsapurNarsapur MedakNarsinghpurNarsipatnamNarwanaNashikNathdwaraNavi MumbaiNavsariNawadaNawalgarhNawanshahrNawaparaNeelapalleNeem Ka ThanaNeemuchNelakondapallyNellimarlaNelloreNew DelhiNeyveliNidadavoluNimaparaNimbaheraNindraNiphadNirmalNizamabadNoidaNokhaNorth ParavurNuziveeduOmalurOngoleOsmanabadOttanchathramPadampurPaithanPalaPalacodePalakkadPalakolPalakolluPalakondaPalakurthiPalamanerPalampurPalaniPalanpurPalapettyPalasaPalejPalgharPalitanaPallipalayamPalluruthyPalvanchaPalwalPamidiPamurPanchkulaPandalamPandavapuraPandharpurPandikkadPanipatPanrutiParalakhemundiParamathivelurParbhaniParigiParippallyParkalParliParvathipuramPatanPathanapuramPathankotPathapatnamPatialaPatnaPatranPattambiPattukkottaiPavagadaPayakaraopetaPayyanurPedakurapaduPedanaPedapaduPeddapalliPeddapuramPenPendraPennagaramPenuganchiproluPeppeganjPeravoorPeravuraniPeringottukaraPerinthalmannaPeriyakulamPeriyapatnaPerumbavoorPerundalaiyurPerunduraiPetladPhalodiPidugurallaPilaniPileruPilkhuwaPinjorePipariyaPithampurPithapuramPodiliPollachiPonduruPonnamaravathiPonnaniPonneriPonnurPorankiPorbandarPort BlairPorumamillaPratapgarh-RajasthanPratapgarh-Uttar-PradeshPratijProddaturPuducherryPudukkottaiPudunagaramPulivendulaPuliyankudiPunalurPunePunganurPunjai PuliampattiPuriPurniaPusadPusapatiregaPuthoorRabkaviRaebareliRaghopurRaghunathganjRahataRahimatpurRahuriRaibagRaiganjRaigarhRaikalRailway KoduruRaipurRaisinghnagarRajahmundryRajamRajapalayamRajgarhRajkotRajnandgaonRajpiplaRajpurRajulaRamabhadrapuramRamachandrapuramRamanathapuramRamayampetRamnagarRampurRanchiRanebennurRanga ReddyRaniRanjangaonRasipuramRatlamRatnagiri Andhra PradeshRavulapalemRaxaulRayachotiRayadurgamRayagadaRepalleRewaRewariRishikeshRohtakRohtasRonRoorkeeRoparRourkelaRudrapurRupnagarSabarkanthaSadasivpetSafidonSagarSagwaraSaharanpurSaharsaSaktiSalemSaligramSaluruSamalkotaSamastipurSambalpurSambhalSanandSanawadSangamnerSangareddiSangariaSangliSangolaSangrurSankagiriSankarankovilSankeshwarSankhedaSanwerSaonerSaraipaliSarangarhSarangpurSarapakaSardulgarhSarniSatanaSathankulamSathupallySathyamangalamSatnaSattenapalleSatturSatyaveduSavarkundlaSawai MadhopurSecunderabadSeethanagaramSehoreSendhwaSenduraiSeoniSeoni MalwaSethiyathopeShadnagarShahadaShahdolShahjahanpurShahpurShajapurShankarampetShankarpalliShankarpetaShenkottaiSheoraphuliShillongShimlaShiraliShirpurShirwalShivamoggaShivpuriShri GanganagarShrirampurSiddhpurSiddipetSidlaghattaSikarSilcharSiliguriSillodSilvassaSindagiSingarayakondaSingrauliSinnarSiraSircillaSirkaliSirpur KagaznagarSirsaSirsiSiruvalurSitamarhiSitapurSivagangaiSivakasiSivasagarSolanSolapurSomandepalleSomanurSonipatSonkatchSrikakulamSrikalahastiSrirangapatnaSrivaikuntamSugauliSujangarhSullurpetaSultan BatherySultanpurSumerpurSundargarhSundernagarSupaulSurajpurSurandaiSuratSurendranagarSuryapetT NarasipuraTadepalligudemTadipatriTallapudiTalwandi BhaiTandaTandurTanguturuTanukuTanurTatipakaTekkaliTenaliTenkasiTezpurThalasseryThalayolaparambuThalikulamThammampattiThaneThanipadiThanjavurTharadTheniThirubuvanaiThirumangalamThiruthaniThiruthuraipoondiThiruvallaThiruvannamalaiThiruvarurThorrurThrissurThuraiyurTinsukiaTipturTiruchendurTiruchengodeTirukoilurTirumalgiriTirunelveliTirupatiTirupatturTirupurTirurTiruvuruTitagarhTittagudiTohanaTonkToopranTrichyTrivandrumTumkurTundlaTuniTuticorinUdaipurUdgirUdhampurUdumalaippettaiUdumalpetUdupiUjjainUlhasnagarUlundurpetUmargamUmbergaonUmbrajUnaUnnaoUppadaUthangaraiUthukottaiUtraulaVadakaraVadalurVadanappallyVadipattiVadodaraVaijapurVaimpalleValancheryValapadiValigondaValliyurValpoiValsadVapiVaradiumVaranasiVarkalaVasadVasaiVatsavaiVazhapadiVedaranyamVellakoilVelloreVempalleVemulawadaVenkatagiriVenkatapuramVeravalVetapalemVidishaVijapurVijayamangalamVijayapuraVijayaraiVijayawadaVikarabadVikravandiVillupuramVinukondaViralimalaiViramgamVirarVissannapetaVizagVizianagaramVuyyuruWadakkancherryWaiWanewadiWaniWarangalWardhaWaroraWashimWayanadWyraYadagiriguttaYamunanagarYavatmalYeldurthyYeleswaramYellanduYellareddyYemmiganurYerragondapalemYerraguntlaZaheerabadZirakpurkeeranurkodoli"
+
+        city = "gurgaon"
+        if (city[0].upper() + city[1:].lower()) in cities:
+            page = requests.get("https://paytm.com/movies/" + city.lower(), timeout=5)
+            data = page.text
+            soup = BeautifulSoup(data, 'lxml')
+
+            div = soup.find_all('div', id="popular-movies")
+            pop_movies = OrderedDict()
+            base_url = "https://paytm.com"
+            for ul in div[0]:
+                for li in ul:
+                    # print(li)
+                    if '''class="_1EJh"''' not in str(li):
+                        ind1 = li.text.index('"name"')
+                        ind2 = li.text.index('"genre"')
+                        pop_movies.update({li.text[ind1 + 8:ind2 - 2]: base_url + li.a['href']})
+            # pprint.pprint(pop_movies)
+            page = requests.get(list(pop_movies.items())[0][1], timeout=5)  # first link
+            data = page.text
+            soup = BeautifulSoup(data, 'lxml')
+            div = soup.find_all('div', class_="_3-rd")
+            details = []
+            for ul in div:
+                for ell in ul:
+                    for a in ell:
+                        details.append(a.text.strip())
+            # print(details)
+
+            showings = OrderedDict()
+            li_all = soup.find_all('li', class_="_2jBq")
+            for li in li_all:
+                for x in li:
+                    print(x)
+                    print()
+                    name = ''
+                    time = ''
+                    if '''class="_2tt5"''' in str(x):
+                        name = x.text
+                        print('hi')
+                    if '''class="_2gza">''' in str(x):
+                        print('bye')
+                        for a in x:
+                            time += a.text + ", "
+                    showings.update({name: time})
+            print()
+            print(showings)
+
+            '''
+            div1_all = soup.find_all('div', class_="_2tt5")
+            for div in div1_all:
+                print(div.text)
+           
+
+            div2_all = soup.find_all('div', class_="_2gza")
+            for div in div2_all:
+                for a in div:
+                    print(a.text)
+             '''
+
+        else:
+            print("No such city found")
+
 
 # --------------------------------------------SCRAPER CLASS CODE ENDS---------------------------------------------------
 
 if __name__ == '__main__':
     sc = Scraper()
-    sc.movie()
-    sc.mess_menu()
-    sc.news()
-    sc.quote()
+    # sc.imdb()
+    # sc.mess_menu()
+    # sc.news()
+    # sc.quote()
+    # sc.paytm()
+    sc.email()
