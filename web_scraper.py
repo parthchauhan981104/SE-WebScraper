@@ -65,7 +65,6 @@ class Scraper(object):
 
     # -----------------------------------------------DATABASE CODE ENDS-------------------------------------------------
 
-
     # ----------------------------------------------EMAIL ALERT - START-------------------------------------------------
 
     def email(self):
@@ -116,7 +115,6 @@ class Scraper(object):
 
     # -------------------------------------------------EMAIL ALERT - END------------------------------------------------
 
-
     # -------------------------------------------SNU Mess Menu Scraper - START------------------------------------------
     def mess_menu(self):
 
@@ -132,7 +130,7 @@ class Scraper(object):
 
         # menu date
         date = soup.find('td', class_="center").label.text.strip()
-        pprint.pprint(date)
+        #pprint.pprint(date)
 
         dh1_breakfast = []
         dh1_lunch = []
@@ -176,12 +174,18 @@ class Scraper(object):
             elif i == 7:
                 break
 
-        print(dh1_breakfast)
-        print(dh1_lunch)
-        print(dh1_dinner)
-        print(dh2_breakfast)
-        print(dh2_lunch)
-        print(dh2_dinner)
+        #print(dh1_breakfast)
+        #print(dh1_lunch)
+        #print(dh1_dinner)
+        #print(dh2_breakfast)
+        #print(dh2_lunch)
+        #print(dh2_dinner)
+        strm = date.center(80," ") + "\nDH1 Breakfast\n" + str(dh1_breakfast)[1:-1] + "\n" + "DH1 Lunch\n" + \
+               str(dh1_lunch)[1:-1] + "\n" + "DH1 Dinner\n" + str(dh1_dinner)[1:-1] + "\n\n" + \
+               "DH2 Breakfast\n" + str(dh2_breakfast)[1:-1] + "\n" + "DH2 Lunch\n" + \
+               str(dh2_lunch)[1:-1] + "\n" + "DH2 Dinner\n" + str(dh2_dinner)[1:-1] + "\n"
+
+        print(strm)
 
     # ---------------------------------------------Mess Menu Scraper - END----------------------------------------------
 
@@ -200,11 +204,13 @@ class Scraper(object):
 
         # quote date
         date = soup.find('div', class_="qotdSubt").text.strip()
-        pprint.pprint(date)
+        #pprint.pprint(date)
 
         quote_of_the_day = soup.find('div', class_="clearfix").text.strip().split("\n")
         quote_of_the_day[:] = (value.strip() for value in quote_of_the_day if value != "" if value != " ")
-        pprint.pprint(quote_of_the_day)
+        #pprint.pprint(quote_of_the_day)
+        strq = date.center(len(quote_of_the_day[0]), " ") + "\n\n" + quote_of_the_day[0] + "\nWritten by: " + quote_of_the_day[1]
+        print(strq)
 
     # -----------------------------------------Brainy Quote Scraper - END-----------------------------------------------
 
@@ -222,11 +228,16 @@ class Scraper(object):
         # print(soup.prettify())
 
         all_h = soup.find_all('h2', limit=10)  # 10 headlines
-        headlines = {}
+        #headlines = {}
         base_url = 'https://timesofindia.indiatimes.com'
+
+        strt = ''
         for h in all_h:
-            headlines.update({h.text: base_url + h.a['href']})
-        pprint.pprint(headlines)
+            #headlines.update({h.text: base_url + h.a['href']})
+            strt += h.text + "\n" + base_url + h.a['href'] + "\n\n"
+
+        #pprint.pprint(headlines)
+        print(strt)
 
     # ----------------------------------------Times of India Scraper - END----------------------------------------------
 
@@ -272,7 +283,7 @@ class Scraper(object):
 
         div_meta = soup.find_all('div', limit=1, class_="metacriticScore score_favorable titleReviewBarSubItem")
         for div in div_meta:
-            movie.update({'metacritic score': div.text.lstrip().rstrip()})
+            movie.update({'metacritic_score': div.text.lstrip().rstrip()})
 
         texts = []
         h4_credits = soup.find_all('h4', class_="inline", limit=3)
@@ -290,9 +301,17 @@ class Scraper(object):
         movie.update({'writers': regex.sub("", texts[1])})
         movie.update({'stars': texts[2].replace('|See full cast & crew»', "")})
 
-        pprint.pprint(movie)
+        #pprint.pprint(movie)
 
-        sleep(2)
+        stri = ''
+        stri += "\t\t" + movie_name.upper().center(30," ") + "\t\n" + "Content Rating : " + movie['content_rating'] + \
+        "\nGenre : " + movie['genre'] + "\nLength : " + movie['movie_length'] + "\nRelease : " + \
+        movie['release_info'] + "\nIMDB Rating : " + movie['movie_rating'] + "\nMetacritic Rating : " + \
+        movie['metacritic_score'] + "\nDirectors : " + movie['directors'] + "\nCast : " + \
+        movie['stars'] + "\nWriters : " + movie['writers'] + "\nSummary : " + movie['summary'] + \
+        "\nLink : " + movie['movie_link'] + "\n\n"
+
+        print(stri)
 
         driver.close()
 
@@ -366,6 +385,91 @@ class Scraper(object):
         else:
             print("No such city found")
 
+    # ------------------------------------------PAYTM Scraper - END-----------------------------------------------------
+
+    # ----------------------------------------CRICBUZZ Scraper - START--------------------------------------------------
+
+    def cricket(self):
+
+        url = 'https://www.cricbuzz.com'
+
+        page = requests.get(url, {'user_agent': self.ua.chrome}, timeout=3)
+
+        data = page.text
+        scores = []
+
+        soup = BeautifulSoup(data, 'lxml')
+        all_divs = soup.find_all('div', attrs={'class': 'cb-col cb-col-25 cb-mtch-blk'})
+        i = 0
+        for div in all_divs:
+            if (i < 5):
+                con = {}
+                # print(div.a['title'])
+                # print("link" + div.a['href'])
+                con['title'] = div.a['title']
+                con['link'] = 'https://www.cricbuzz.com' + div.a['href']
+                if div.a.div.string is not None:
+                    con['country1'] = div.a.div.string
+                    con['score1'] = '0/0'
+                else:
+                    con['country1'] = div.a.div.div.string
+                    con['score1'] = div.a.div.div.next_sibling.string
+                if div.a.div.next_sibling.string is not None:
+                    con['country2'] = div.a.div.next_sibling.next_sibling.string
+                    con['score2'] = '0/0'
+                    con['status'] = div.a.div.next_sibling.next_sibling.next_sibling.string
+                else:
+                    con['country2'] = div.a.div.next_sibling.div.string
+                    con['score2'] = div.a.div.next_sibling.div.next_sibling.string
+                    con['status'] = div.a.div.next_sibling.next_sibling.string
+                scores.append(con)
+                # print(div.a.div.div.string)
+                # print(div.a.div.div.next_sibling.string)
+                # print(div.a.div.div.string)
+                # print(div.a.div.div.div.string)
+                i += 1
+
+        strc = ''
+        for j in range(0, 5):
+            strc += scores[j]['title'] + "\n" + scores[j]['country1'] + " - " + scores[j]['score1'] + "   " + scores[j][
+                'country2'] + ' - ' + scores[j]['score2'] + "\n" + scores[j]['status']
+            strc += "\n" + "\n"
+            # print(scores[j])
+        print(strc)
+
+    # ----------------------------------------CRICBUZZ Scraper - END----------------------------------------------------
+
+    # ---------------------------------------BILLBOARD Scraper - START--------------------------------------------------
+
+    def billboard(self):
+        url = 'https://www.billboard.com/charts/hot-100'
+        page = requests.get(url, {'user_agent': self.ua.chrome})
+
+        data = page.text
+        songs = []
+        i = 0
+        soup = BeautifulSoup(data, 'lxml')
+        all_b = soup.find_all('button',
+                              attrs={'class': 'chart-element__wrapper display--flex flex--grow sort--this-week'})
+        all_lis = soup.find_all('li', attrs={'class': 'chart-list__element display--flex'})
+        # print(all_b)
+        a = ''
+        for l in all_lis:
+            dic = {}
+            dic['rank'] = l.button.span.span.string
+            dic['song'] = l.button.span.next_sibling.next_sibling.span.string
+            dic['artist'] = l.button.span.next_sibling.next_sibling.span.next_sibling.next_sibling.string
+            songs.append(dic)
+        # for i in range(0,100):
+        #     print(songs[i])
+        bs = ''
+        for i in range(0, 10):
+            bs += str(i + 1) + "." + songs[i]['song'] + " by " + songs[i]['artist']
+            bs += "\n"
+        print(bs)
+
+    # ---------------------------------------BILLBOARD Scraper - END----------------------------------------------------
+
 
 # --------------------------------------------SCRAPER CLASS CODE ENDS---------------------------------------------------
 
@@ -376,4 +480,6 @@ if __name__ == '__main__':
     # sc.news()
     # sc.quote()
     # sc.paytm()
-    sc.email()
+    # sc.email()
+    # sc.cricket()
+    # sc.billboard()
