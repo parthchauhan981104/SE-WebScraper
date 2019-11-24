@@ -45,14 +45,15 @@ class Scraper(object):
                                  EMAIL            CHAR(50),
                                  PASSWORD         CHAR(50),
                                  LOCATION         CHAR(50),
-                                 PREFERENCES      CHAR(50));''')
+                                 PREFERENCES      CHAR(50)
+                                 );''')
         print("Table created successfully")
 
-        cur.execute("INSERT INTO USERS (FULLNAME, USERNAME, EMAIL, PASSWORD, LOCATION, PREFERENCES) \
-                      VALUES ('Paul', 'California', 'lala', '1234', 'delhi', '1,1,1,1,0,0' )");
+        '''cur.execute("INSERT INTO USERS (FULLNAME, USERNAME, EMAIL, PASSWORD, LOCATION, PREFERENCES) \
+                      VALUES ('Paul', 'California', 'lala', '1234', 'delhi', '1,1,1,1,0,0' )"); '''
 
         conn.commit()
-        print("Records created successfully")
+        #print("Records created successfully")
 
         cursor = conn.execute("SELECT fullname, username, password from USERS")
         for row in cursor:
@@ -101,7 +102,7 @@ class Scraper(object):
         conn.close()
         return 0  # no such user
 
-    def set_preferences(self, username, preferences):
+    def set_preferences(self, username, preferences, ):
         conn = sqlite3.connect('ws.db')
         print("Opened database successfully")
         cursor = conn.execute("SELECT username, preferences from USERS")
@@ -156,11 +157,19 @@ class Scraper(object):
 
     # ----------------------------------------------EMAIL ALERT - START-------------------------------------------------
 
-    def email(self, text):
+    def email(self, username, text):
 
         sender_email = "webscraperQT@gmail.com"
-        receiver_email = "pc828@snu.edu.in"
-        password = "haumluuksjonrtkd"  # app specific password
+        #receiver_email = "pc828@snu.edu.in"
+        password = "haumluuksjonrtkd"  # app specific sender email password
+
+        conn = sqlite3.connect('ws.db')
+        print("Opened database successfully")
+        cursor = conn.execute("SELECT email from USERS where username = ?", username)
+        for row in cursor:
+                receiver_email = row[0]
+                conn.close()
+                break
 
         message = MIMEMultipart("alternative")
         message["Subject"] = "multipart test"
@@ -190,11 +199,15 @@ class Scraper(object):
 
         # Create secure connection with server and send email
         context = ssl.create_default_context()
-        with smtplib.SMTP_SSL("smtp.gmail.com", 465, context=context) as server:
-            server.login(sender_email, password)
-            server.sendmail(
-                sender_email, receiver_email, message.as_string()
-            )
+        try:
+            with smtplib.SMTP_SSL("smtp.gmail.com", 465, context=context) as server:
+                server.login(sender_email, password)
+                server.sendmail(
+                    sender_email, receiver_email, message.as_string()
+                )
+            print("Email sent")
+        except:
+            print("Email not sent")
 
     # -------------------------------------------------EMAIL ALERT - END------------------------------------------------
 
@@ -607,5 +620,5 @@ if __name__ == '__main__':
     # sc.cricket()
     # sc.billboard()
     # sc.init_db()
-    #print(sc.valid_login("California", "1234"))
+    # print(sc.valid_login("California", "1234"))
     #print(sc.get_preferences("California"))
