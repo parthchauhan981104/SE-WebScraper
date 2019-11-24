@@ -9,7 +9,9 @@ from collections import OrderedDict
 from selenium import webdriver
 import sqlite3
 from time import sleep
-import smtplib, ssl
+import smtplib
+import ssl
+import string, random
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 
@@ -38,36 +40,123 @@ class Scraper(object):
         # conn.execute('''DROP TABLE IF EXISTS COMPANY;''')
         cur = conn.cursor()
         cur.execute('''CREATE TABLE IF NOT EXISTS USERS(
-                         ID INTEGER PRIMARY KEY NOT NULL,
-                         NAME           TEXT    NOT NULL,
-                         USERNAME       CHAR(50),
-                         EMAIL          CHAR(50),
-                         PASSWORD         CHAR(50),
-                         PREFERENCES         CHAR(50)));''')
+                                 FULLNAME         CHAR(50)    NOT NULL,
+                                 USERNAME         CHAR(50) UNIQUE,
+                                 EMAIL            CHAR(50),
+                                 PASSWORD         CHAR(50),
+                                 LOCATION         CHAR(50),
+                                 PREFERENCES      CHAR(50));''')
         print("Table created successfully")
 
-        cur.execute("INSERT INTO USERS (NAME, USERNAME, EMAIL, PASSWORD, PREFERENCES) \
-                      VALUES ('Paul', 'California', 'lala', '' )");
+        cur.execute("INSERT INTO USERS (FULLNAME, USERNAME, EMAIL, PASSWORD, LOCATION, PREFERENCES) \
+                      VALUES ('Paul', 'California', 'lala', '1234', 'delhi', '1,1,1,1,0,0' )");
 
         conn.commit()
         print("Records created successfully")
 
-        cursor = conn.execute("SELECT id, name, username, password from USERS")
+        cursor = conn.execute("SELECT fullname, username, password from USERS")
         for row in cursor:
-            print("ID = ", row[0])
-            print("NAME = ", row[1])
-            print("USERNAME= ", row[2])
-            print("PASSWORD = ", row[3], "\n")
+            print("NAME = ", row[0])
+            print("USERNAME= ", row[1])
+            print("PASSWORD = ", row[2], "\n")
 
         print("Operation done successfully")
 
+        conn.close()
+
+    def valid_login(self, username, password):
+        conn = sqlite3.connect('ws.db')
+        print("Opened database successfully")
+        cursor = conn.execute("SELECT username, password from USERS")
+        for row in cursor:
+            if username == row[0] and password == row[1]:
+                conn.close()
+                return 1  # valid login
+
+        conn.close()
+        return 0  # invalid login
+
+    def forgot_password(self, username):
+        letters = string.ascii_lowercase
+        new_pass = ''.join(random.choice(letters) for i in range(8))
+        self.email("New password is :" + new_pass)
+        conn = sqlite3.connect('ws.db')
+        print("Opened database successfully")
+        sql_update_query = "Update USERS set PASSWORD = " + new_pass + " where username = " + username
+        cursor = conn.cursor()
+        cursor.execute(sql_update_query)
+        conn.commit()
+        conn.close()
+
+    def get_preferences(self, username):
+        conn = sqlite3.connect('ws.db')
+        print("Opened database successfully")
+        cursor = conn.execute("SELECT username, preferences from USERS")
+        for row in cursor:
+            if username == row[0]:
+                preferences = list(map(int, row[1].split(",")))
+                conn.close()
+                return preferences  # return preferences as a list
+
+        conn.close()
+        return 0  # no such user
+
+    def set_preferences(self, username, preferences):
+        conn = sqlite3.connect('ws.db')
+        print("Opened database successfully")
+        cursor = conn.execute("SELECT username, preferences from USERS")
+        for row in cursor:
+            if username == row[0]:
+                preferences = ','.join(x for x in preferences)
+                sql_update_query = "Update USERS set PREFERENCES = " + preferences + " where username = " + username
+                cursor = conn.cursor()
+                cursor.execute(sql_update_query)
+                conn.close()
+
+        conn.close()
+        return 0  # no such user
+
+    def register(self, fullname, username, email, password):
+        conn = sqlite3.connect('ws.db')
+        print("Opened database successfully")
+        cursor = conn.execute("SELECT username from USERS")
+        for row in cursor:
+            if username == row[0]:
+                conn.close()
+                return 0  # invalid register, username already exists
+
+        cursor = conn.cursor()
+        cursor.execute("INSERT INTO USERS (FULLNAME, USERNAME, EMAIL, PASSWORD, LOCATION, PREFERENCES) \
+                              VALUES (?, ?, ?, ?, ?, ? )", fullname, username, email, password, 'delhi', '1,1,1,1,0,0');
+        print("Inserted in database successfully")
+        conn.close()
+        return 1  # valid register
+
+    def change_password(self, username, password):
+        conn = sqlite3.connect('ws.db')
+        print("Opened database successfully")
+        sql_update_query = "Update USERS set PASSWORD = " + password + " where username = " + username
+        cursor = conn.cursor()
+        cursor.execute(sql_update_query)
+        conn.commit()
+        print("Changed password successfully")
+        conn.close()
+
+    def change_location(self, username, location):
+        conn = sqlite3.connect('ws.db')
+        print("Opened database successfully")
+        sql_update_query = "Update USERS set LOCATION = " + location + " where username = " + username
+        cursor = conn.cursor()
+        cursor.execute(sql_update_query)
+        conn.commit()
+        print("Changed location successfully")
         conn.close()
 
     # -----------------------------------------------DATABASE CODE ENDS-------------------------------------------------
 
     # ----------------------------------------------EMAIL ALERT - START-------------------------------------------------
 
-    def email(self):
+    def email(self, text):
 
         sender_email = "webscraperQT@gmail.com"
         receiver_email = "pc828@snu.edu.in"
@@ -78,12 +167,6 @@ class Scraper(object):
         message["From"] = sender_email
         message["To"] = receiver_email
 
-        # Create the plain-text and HTML version of your message
-        text = """\
-        Hi,
-        How are you?
-        Real Python has many great tutorials:
-        www.realpython.com"""
         html = """\
         <html>
           <body>
@@ -98,12 +181,12 @@ class Scraper(object):
 
         # Turn these into plain/html MIMEText objects
         part1 = MIMEText(text, "plain")
-        part2 = MIMEText(html, "html")
+        # part2 = MIMEText(html, "html")
 
         # Add HTML/plain-text parts to MIMEMultipart message
         # The email client will try to render the last part first
         message.attach(part1)
-        message.attach(part2)
+        # message.attach(part2)
 
         # Create secure connection with server and send email
         context = ssl.create_default_context()
@@ -130,7 +213,7 @@ class Scraper(object):
 
         # menu date
         date = soup.find('td', class_="center").label.text.strip()
-        #pprint.pprint(date)
+        # pprint.pprint(date)
 
         dh1_breakfast = []
         dh1_lunch = []
@@ -174,18 +257,18 @@ class Scraper(object):
             elif i == 7:
                 break
 
-        #print(dh1_breakfast)
-        #print(dh1_lunch)
-        #print(dh1_dinner)
-        #print(dh2_breakfast)
-        #print(dh2_lunch)
-        #print(dh2_dinner)
-        strm = date.center(80," ") + "\nDH1 Breakfast\n" + str(dh1_breakfast)[1:-1] + "\n" + "DH1 Lunch\n" + \
+        # print(dh1_breakfast)
+        # print(dh1_lunch)
+        # print(dh1_dinner)
+        # print(dh2_breakfast)
+        # print(dh2_lunch)
+        # print(dh2_dinner)
+        strm = date.center(80, " ") + "\nDH1 Breakfast\n" + str(dh1_breakfast)[1:-1] + "\n" + "DH1 Lunch\n" + \
                str(dh1_lunch)[1:-1] + "\n" + "DH1 Dinner\n" + str(dh1_dinner)[1:-1] + "\n\n" + \
                "DH2 Breakfast\n" + str(dh2_breakfast)[1:-1] + "\n" + "DH2 Lunch\n" + \
                str(dh2_lunch)[1:-1] + "\n" + "DH2 Dinner\n" + str(dh2_dinner)[1:-1] + "\n"
 
-        print(strm)
+        return strm
 
     # ---------------------------------------------Mess Menu Scraper - END----------------------------------------------
 
@@ -204,13 +287,14 @@ class Scraper(object):
 
         # quote date
         date = soup.find('div', class_="qotdSubt").text.strip()
-        #pprint.pprint(date)
+        # pprint.pprint(date)
 
         quote_of_the_day = soup.find('div', class_="clearfix").text.strip().split("\n")
         quote_of_the_day[:] = (value.strip() for value in quote_of_the_day if value != "" if value != " ")
-        #pprint.pprint(quote_of_the_day)
-        strq = date.center(len(quote_of_the_day[0]), " ") + "\n\n" + quote_of_the_day[0] + "\nWritten by: " + quote_of_the_day[1]
-        print(strq)
+        # pprint.pprint(quote_of_the_day)
+        strq = date.center(len(quote_of_the_day[0]), " ") + "\n\n" + quote_of_the_day[0] + "\nWritten by: " + \
+               quote_of_the_day[1]
+        return strq
 
     # -----------------------------------------Brainy Quote Scraper - END-----------------------------------------------
 
@@ -228,16 +312,16 @@ class Scraper(object):
         # print(soup.prettify())
 
         all_h = soup.find_all('h2', limit=10)  # 10 headlines
-        #headlines = {}
+        # headlines = {}
         base_url = 'https://timesofindia.indiatimes.com'
 
         strt = ''
         for h in all_h:
-            #headlines.update({h.text: base_url + h.a['href']})
+            # headlines.update({h.text: base_url + h.a['href']})
             strt += h.text + "\n" + base_url + h.a['href'] + "\n\n"
 
-        #pprint.pprint(headlines)
-        print(strt)
+        # pprint.pprint(headlines)
+        return strt
 
     # ----------------------------------------Times of India Scraper - END----------------------------------------------
 
@@ -301,15 +385,15 @@ class Scraper(object):
         movie.update({'writers': regex.sub("", texts[1])})
         movie.update({'stars': texts[2].replace('|See full cast & crew»', "")})
 
-        #pprint.pprint(movie)
+        # pprint.pprint(movie)
 
         stri = ''
-        stri += "\t\t" + movie_name.upper().center(30," ") + "\t\n" + "Content Rating : " + movie['content_rating'] + \
-        "\nGenre : " + movie['genre'] + "\nLength : " + movie['movie_length'] + "\nRelease : " + \
-        movie['release_info'] + "\nIMDB Rating : " + movie['movie_rating'] + "\nMetacritic Rating : " + \
-        movie['metacritic_score'] + "\nDirectors : " + movie['directors'] + "\nCast : " + \
-        movie['stars'] + "\nWriters : " + movie['writers'] + "\nSummary : " + movie['summary'] + \
-        "\nLink : " + movie['movie_link'] + "\n\n"
+        stri += "\t\t" + movie_name.upper().center(30, " ") + "\t\n" + "Content Rating : " + movie['content_rating'] + \
+                "\nGenre : " + movie['genre'] + "\nLength : " + movie['movie_length'] + "\nRelease : " + \
+                movie['release_info'] + "\nIMDB Rating : " + movie['movie_rating'] + "\nMetacritic Rating : " + \
+                movie['metacritic_score'] + "\nDirectors : " + movie['directors'] + "\nCast : " + \
+                movie['stars'] + "\nWriters : " + movie['writers'] + "\nSummary : " + movie['summary'] + \
+                "\nLink : " + movie['movie_link'] + "\n\n"
 
         print(stri)
 
@@ -359,22 +443,23 @@ class Scraper(object):
                     print()
                     name = ''
                     time = ''
-                    if '''class="_2tt5"''' in str(x):
+                    if '''class="_2tt5"''' in str(x):  # mall name
                         name = x.text
                         print('hi')
-                    if '''class="_2gza">''' in str(x):
+                    if '''class="_2gza">''' in str(x):  # timings and prices
                         print('bye')
                         for a in x:
                             time += a.text + ", "
                     showings.update({name: time})
             print()
+
             print(showings)
 
             '''
             div1_all = soup.find_all('div', class_="_2tt5")
             for div in div1_all:
                 print(div.text)
-           
+
 
             div2_all = soup.find_all('div', class_="_2gza")
             for div in div2_all:
@@ -435,7 +520,7 @@ class Scraper(object):
                 'country2'] + ' - ' + scores[j]['score2'] + "\n" + scores[j]['status']
             strc += "\n" + "\n"
             # print(scores[j])
-        print(strc)
+        return strc
 
     # ----------------------------------------CRICBUZZ Scraper - END----------------------------------------------------
 
@@ -466,9 +551,47 @@ class Scraper(object):
         for i in range(0, 10):
             bs += str(i + 1) + "." + songs[i]['song'] + " by " + songs[i]['artist']
             bs += "\n"
-        print(bs)
+        return bs
 
     # ---------------------------------------BILLBOARD Scraper - END----------------------------------------------------
+
+    # ---------------------------------------WEATHER Scraper - START----------------------------------------------------
+
+    def weather(self):
+        driver = webdriver.Chrome(options=self.options)
+        city = "delhi"
+        driver.get('https://openweathermap.org/find?q=' + city.replace(" ", "+"))
+        data = driver.page_source
+        # sleep(5)
+        # print(data)
+        soup = BeautifulSoup(data, 'lxml')
+        div = soup.find('div', id='forecast_list_ul')
+        strw = ''
+        i = 0
+        base_url = 'https://openweathermap.org'
+        link = ''
+        for td in div.tr:
+            if i == 0:
+                i += 1
+                continue
+            j = 0
+            for bp in td:
+                if 'img src' in str(bp):
+                    continue
+                if 'a href' in str(bp) and j == 0:
+                    # print(bp)
+                    link += base_url + bp.a['href']
+                    j += 1
+                # print(bp)
+                try:
+                    strw += bp.text.strip() + "\n"
+                except:
+                    strw += bp.string + "\n"
+
+        driver.close()
+        return strw
+
+    # ---------------------------------------WEATHER Scraper - END----------------------------------------------------
 
 
 # --------------------------------------------SCRAPER CLASS CODE ENDS---------------------------------------------------
@@ -480,6 +603,9 @@ if __name__ == '__main__':
     # sc.news()
     # sc.quote()
     # sc.paytm()
-    # sc.email()
+    # sc.email("Hi Parth")
     # sc.cricket()
     # sc.billboard()
+    # sc.init_db()
+    #print(sc.valid_login("California", "1234"))
+    #print(sc.get_preferences("California"))
