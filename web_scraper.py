@@ -54,7 +54,7 @@ class Scraper(object):
 
         conn.commit()
         #print("Records created successfully")
-
+        '''
         cursor = conn.execute("SELECT fullname, username, password from USERS")
         for row in cursor:
             print("NAME = ", row[0])
@@ -62,18 +62,35 @@ class Scraper(object):
             print("PASSWORD = ", row[2], "\n")
 
         print("Operation done successfully")
-
+        '''
         conn.close()
+
+    def execute_statement(self, s):
+        conn = sqlite3.connect('ws.db')
+        print("Opened database successfully")
+
+        cur = conn.cursor()
+        cur.execute(s)
+        if 'SELECT' in s:
+            for row in cur:
+                print(row)
+
+        conn.commit()
+        conn.close()
+
 
     def valid_login(self, username, password):
         conn = sqlite3.connect('ws.db')
         print("Opened database successfully")
         cursor = conn.execute("SELECT username, password from USERS")
         for row in cursor:
-            if username == row[0] and password == row[1]:
+            #print(row[0])
+            #print(row[1])
+            if row[0] == username and row[1] == password:
+                #print('lala')
                 conn.close()
                 return 1  # valid login
-
+        #print('haha')
         conn.close()
         return 0  # invalid login
 
@@ -112,6 +129,7 @@ class Scraper(object):
                 sql_update_query = "Update USERS set PREFERENCES = " + preferences + " where username = " + username
                 cursor = conn.cursor()
                 cursor.execute(sql_update_query)
+                conn.commit()
                 conn.close()
 
         conn.close()
@@ -122,14 +140,17 @@ class Scraper(object):
         print("Opened database successfully")
         cursor = conn.execute("SELECT username from USERS")
         for row in cursor:
+            #print(row[0])
             if username == row[0]:
+                #print('lalal')
                 conn.close()
                 return 0  # invalid register, username already exists
 
         cursor = conn.cursor()
         cursor.execute("INSERT INTO USERS (FULLNAME, USERNAME, EMAIL, PASSWORD, LOCATION, PREFERENCES) \
-                              VALUES (?, ?, ?, ?, ?, ? )", fullname, username, email, password, 'delhi', '1,1,1,1,0,0');
+                              VALUES (?, ?, ?, ?, ?, ? )", (fullname, username, email, password, 'delhi', '1,1,1,1,0,0'));
         print("Inserted in database successfully")
+        conn.commit()
         conn.close()
         return 1  # valid register
 
@@ -620,5 +641,7 @@ if __name__ == '__main__':
     # sc.cricket()
     # sc.billboard()
     # sc.init_db()
-    # print(sc.valid_login("California", "1234"))
+    print(sc.register("Parth", "pc828", "snu", "1234"))
+    sc.execute_statement("SELECT * FROM USERS;")
+    print(sc.valid_login("pc828", "1234"))
     #print(sc.get_preferences("California"))
