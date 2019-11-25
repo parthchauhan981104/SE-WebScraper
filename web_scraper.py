@@ -53,7 +53,7 @@ class Scraper(object):
                       VALUES ('Paul', 'California', 'lala', '1234', 'delhi', '1,1,1,1,0,0' )"); '''
 
         conn.commit()
-        #print("Records created successfully")
+        # print("Records created successfully")
         '''
         cursor = conn.execute("SELECT fullname, username, password from USERS")
         for row in cursor:
@@ -78,19 +78,18 @@ class Scraper(object):
         conn.commit()
         conn.close()
 
-
     def valid_login(self, username, password):
         conn = sqlite3.connect('ws.db')
         print("Opened database successfully")
         cursor = conn.execute("SELECT username, password from USERS")
         for row in cursor:
-            #print(row[0])
-            #print(row[1])
+            # print(row[0])
+            # print(row[1])
             if row[0] == username and row[1] == password:
-                #print('lala')
+                # print('lala')
                 conn.close()
                 return 1  # valid login
-        #print('haha')
+        # print('haha')
         conn.close()
         return 0  # invalid login
 
@@ -122,33 +121,29 @@ class Scraper(object):
     def set_preferences(self, username, preferences, ):
         conn = sqlite3.connect('ws.db')
         print("Opened database successfully")
-        cursor = conn.execute("SELECT username, preferences from USERS")
-        for row in cursor:
-            if username == row[0]:
-                preferences = ','.join(x for x in preferences)
-                sql_update_query = "Update USERS set PREFERENCES = " + preferences + " where username = " + username
-                cursor = conn.cursor()
-                cursor.execute(sql_update_query)
-                conn.commit()
-                conn.close()
 
+        preferences = ','.join(str(x) for x in preferences)
+        sql_update_query = "Update USERS set PREFERENCES = '" + preferences + "' where username = '" + username + "'"
+        cursor = conn.cursor()
+        cursor.execute(sql_update_query)
+        conn.commit()
         conn.close()
-        return 0  # no such user
 
     def register(self, fullname, username, email, password):
         conn = sqlite3.connect('ws.db')
         print("Opened database successfully")
         cursor = conn.execute("SELECT username from USERS")
         for row in cursor:
-            #print(row[0])
+            # print(row[0])
             if username == row[0]:
-                #print('lalal')
+                # print('lalal')
                 conn.close()
                 return 0  # invalid register, username already exists
 
         cursor = conn.cursor()
         cursor.execute("INSERT INTO USERS (FULLNAME, USERNAME, EMAIL, PASSWORD, LOCATION, PREFERENCES) \
-                              VALUES (?, ?, ?, ?, ?, ? )", (fullname, username, email, password, 'delhi', '1,1,1,1,0,0'));
+                              VALUES (?, ?, ?, ?, ?, ? )",
+                       (fullname, username, email, password, 'delhi', '1,1,1,1,0,0'));
         print("Inserted in database successfully")
         conn.commit()
         conn.close()
@@ -181,16 +176,16 @@ class Scraper(object):
     def email(self, username, text):
 
         sender_email = "webscraperQT@gmail.com"
-        #receiver_email = "pc828@snu.edu.in"
+        # receiver_email = "pc828@snu.edu.in"
         password = "haumluuksjonrtkd"  # app specific sender email password
 
         conn = sqlite3.connect('ws.db')
         print("Opened database successfully")
         cursor = conn.execute("SELECT email from USERS where username = ?", username)
         for row in cursor:
-                receiver_email = row[0]
-                conn.close()
-                break
+            receiver_email = row[0]
+            conn.close()
+            break
 
         message = MIMEMultipart("alternative")
         message["Subject"] = "multipart test"
@@ -352,7 +347,7 @@ class Scraper(object):
         strt = ''
         for h in all_h:
             # headlines.update({h.text: base_url + h.a['href']})
-            strt += h.text + "\n" + base_url + h.a['href'] + "\n\n"
+            strt += h.text + "\n\n"
 
         # pprint.pprint(headlines)
         return strt
@@ -641,7 +636,9 @@ if __name__ == '__main__':
     # sc.cricket()
     # sc.billboard()
     # sc.init_db()
-    print(sc.register("Parth", "pc828", "snu", "1234"))
+    # print(sc.register("Parth", "pc828", "snu", "1234"))
     sc.execute_statement("SELECT * FROM USERS;")
-    print(sc.valid_login("pc828", "1234"))
-    #print(sc.get_preferences("California"))
+    # print(sc.valid_login("pc828", "1234"))
+    # print(sc.get_preferences("California"))
+    # sc.set_preferences('pc828', [1,0,1,0,1,1])
+    # sc.execute_statement("SELECT * FROM USERS;")
