@@ -1,6 +1,6 @@
 import sys
 from PyQt5 import QtCore
-# from PyQt5 import Qt
+#from PyQt5 import Qt
 from PyQt5 import QtGui
 from PyQt5 import uic
 from PyQt5 import QtWidgets
@@ -8,17 +8,17 @@ from PyQt5.QtWidgets import QApplication
 from functools import partial
 import web_scraper
 from time import sleep
-
 strc = ''
 strb = ''
 strq = ''
 strn = ''
 strm = ''
 strw = ''
+em = 0
 sc = web_scraper.Scraper()
-# strw1 = sc.weather()
+#strw1 = sc.weather()
 app = QApplication(sys.argv)
-# p = [0,0,1,1,1,1]
+#p = [0,0,1,1,1,1]
 pt = []
 p = []
 # If you saved the template in `templates/main_window.ui`
@@ -31,22 +31,34 @@ er = uic.loadUi('error.ui')
 pre = uic.loadUi('preferences.ui')
 guests1 = uic.loadUi('guest1.ui')
 guests2 = uic.loadUi('guest2.ui')
+imdbs = uic.loadUi('imdb_results.ui')
+#welcome screen
+logo = QtGui.QImage('logo1.jpeg')
+logo = logo.scaled(2000, 440, aspectRatioMode=QtCore.Qt.KeepAspectRatio,transformMode=QtCore.Qt.SmoothTransformation)
+ui2.logo.setPixmap(QtGui.QPixmap.fromImage(logo))
 
+logo2 = QtGui.QImage('logo2.jpeg')
+logo2 = logo2.scaled(3200, 1000, aspectRatioMode=QtCore.Qt.KeepAspectRatio, transformMode=QtCore.Qt.SmoothTransformation)
+ui2.endimg.setPixmap(QtGui.QPixmap.fromImage(logo2))
 
-# welcome screen
+guests1.glogo.setPixmap(QtGui.QPixmap.fromImage(logo))
+guests2.g2logo.setPixmap(QtGui.QPixmap.fromImage(logo))
+guests2.g2elogo.setPixmap(QtGui.QPixmap.fromImage(logo2))
+def error():
+    er.show()
+def discp(im,st,i):
 
-def discp(im, st, i):
     print('cricbuzz')
-    if i == 1:
+    if i==1 :
         ic = QtGui.QImage(im)
-        ic = ic.scaled(350, 25, aspectRatioMode=QtCore.Qt.KeepAspectRatio, transformMode=QtCore.Qt.SmoothTransformation)
+        ic = ic.scaled(350,25, aspectRatioMode=QtCore.Qt.KeepAspectRatio, transformMode=QtCore.Qt.SmoothTransformation)
         ui.ic1.setPixmap(QtGui.QPixmap.fromImage(ic))
         ui.txt1.setText(st)
         ui.txt1.setAlignment(QtCore.Qt.AlignTop)
-        ui.txt1.setFont(QtGui.QFont('Times', 9))
-        ui.txt1.move(30, 50)
+        ui.txt1.setFont(QtGui.QFont('Times',9))
+        ui.txt1.move(30,50)
 
-    elif i == 2:
+    elif i==2:
         ic = QtGui.QImage(im)
         ic = ic.scaled(350, 25, aspectRatioMode=QtCore.Qt.KeepAspectRatio, transformMode=QtCore.Qt.SmoothTransformation)
         ui.ic2.setPixmap(QtGui.QPixmap.fromImage(ic))
@@ -55,7 +67,7 @@ def discp(im, st, i):
         ui.txt2.setAlignment(QtCore.Qt.AlignTop)
         ui.txt2.setFont(QtGui.QFont('Times', 9))
         ui.txt2.move(30, 50)
-    elif i == 3:
+    elif i==3:
         ic = QtGui.QImage(im)
         ic = ic.scaled(350, 25, aspectRatioMode=QtCore.Qt.KeepAspectRatio, transformMode=QtCore.Qt.SmoothTransformation)
         ui.ic3.setPixmap(QtGui.QPixmap.fromImage(ic))
@@ -64,7 +76,7 @@ def discp(im, st, i):
         ui.txt3.setAlignment(QtCore.Qt.AlignTop)
         ui.txt3.setFont(QtGui.QFont('Times', 9))
         ui.txt3.move(30, 50)
-    elif i == 4:
+    elif i==4:
         ic = QtGui.QImage(im)
         ic = ic.scaled(350, 25, aspectRatioMode=QtCore.Qt.KeepAspectRatio, transformMode=QtCore.Qt.SmoothTransformation)
         ui.ic4.setPixmap(QtGui.QPixmap.fromImage(ic))
@@ -73,37 +85,33 @@ def discp(im, st, i):
         ui.txt4.setFont(QtGui.QFont('Times', 9))
         ui.txt4.move(30, 50)
 
-
 def reguser():
+    global em
     uname = reg.username.text()
     fullname = reg.fullname.text()
     email = reg.email.text()
     passw = reg.password.text()
 
-    v = sc.register(fullname, uname, email, passw)
+    v = sc.register(fullname,uname,email,passw)
     print(v)
     if v == 0:
-        er.errorm.settext("UserName already Taken")
-        er.show()
+        em = 1
+
+
     else:
         reg.close()
 
 
+
 def logscr():
     log.show()
-
-
 def regscr():
     reg.show()
     reg.save.clicked.connect(reguser)
-
-
 def guestscr():
     prevg()
     guests1.next.clicked.connect(nextg)
     guests2.prev.clicked.connect(prevg)
-
-
 def valuser():
     global pt
     global p
@@ -112,16 +120,19 @@ def valuser():
     upass = log.upass.text()
     if uname == "" or upass == "":
         print("empty")
-        er.errorm.settext("Enter Username or Password")
 
-        er.show()
+        error()
+
 
 
 
     else:
         v = sc.valid_login(uname, upass)
         print(v)
-        # v=1
+        #v=1
+        if v ==0:
+            print("a")
+            em = 1
 
         if v == 1:
             log.close()
@@ -129,20 +140,23 @@ def valuser():
             pt = p
             print(pt)
             prev()
-            # mtext = strc + '\n' + '\n' + strb + '\n' + '\n' + strn + '\n' + '\n' + strm + '\n' + '\n' +strq+ '\n' + '\n' +strw
-            # mail2 = partial(uname,mtext)
-            # ui.email.clicked.connect(mail2)
-            pref2 = partial(pref, uname)
+            #mtext =
+            #mail2 = partial(mail,uname)
+            ui.email.clicked.connect(mail)
+            pref2 = partial(pref,uname)
             ui.preferences.clicked.connect(pref2)
-            # prev2 = partial(prev,p,p)
-            # next2 = partial(nexts,p,pt)
+            #changeloc2 = partial(changeloc,uname)
+            #ui.ok.clicked.connect(changeloc2)
+            ui.imdb.clicked.connect(imdb)
+
+            cpassword2 = partial(cpassword,uname)
+            ui.change.clicked.connect(cpassword2)
+            #prev2 = partial(prev,p,p)
+            #next2 = partial(nexts,p,pt)
             ui.next.clicked.connect(next)
             ui2.prev.clicked.connect(prev)
 
 
-        else:
-            er.errorm.settext("Enter Valid Username or Password")
-            er.show()
 
 
 wel.login.clicked.connect(logscr)
@@ -150,16 +164,49 @@ wel.reg.clicked.connect(regscr)
 wel.guest.clicked.connect(guestscr)
 log.log.clicked.connect(valuser)
 
+def cpassword(u):
+    pas = ui.cpass.text()
+    sc.change_password(u,pas)
+
+def mail():
+    t = strc + '\n' + '\n' + strb + '\n' + '\n' + strn + '\n' + '\n' + strm + '\n' + '\n' +strq+ '\n' + '\n' +strw
+    sc.email('pc828@snu.edu.in',t)
+
+
+
+#ui2.logo.setPixmap(QtGui.QPixmap.fromImage(logo1))
+def disim(t):
+    ic = QtGui.QImage("imdb.jfif")
+    ic = ic.scaled(350, 250, aspectRatioMode=QtCore.Qt.KeepAspectRatio, transformMode=QtCore.Qt.SmoothTransformation)
+    imdbs.img.setPixmap(QtGui.QPixmap.fromImage(ic))
+    imdbs.text.setText(t)
+    imdbs.text.setAlignment(QtCore.Qt.AlignTop)
+    imdbs.text.setFont(QtGui.QFont('Times', 12))
+    imdbs.text.move(30, 50)
+
+
+
+
 wel.show()
+def imdb():
+    m = ui.movie.text()
+    print(m)
+    t = sc.imdb(m)
+    print(t)
+    disim(t)
+    imdbs.show()
 
 
-def mail(u, m):
-    sc.email(u, m)
+def changeloc(u):
+    location = ui.loc.text()
+    print(location)
+    sc.change_location(u,location)
 
-
+# def mail(u,m):
+#     sc.email(u,m)
 def pref(u):
     pre.show()
-    setpref2 = partial(setpref, u)
+    setpref2 = partial(setpref,u)
     pre.set.clicked.connect(setpref2)
 
 
@@ -190,17 +237,22 @@ def setpref(u):
     else:
         emlist.append(0)
     print(emlist)
-    sc.set_preferences(u, emlist)
+    sc.set_preferences(u,emlist)
     pre.close()
 
 
+
+
 mic = QtGui.QImage('mainic.jpeg')
-mic = mic.scaled(2500, 600, aspectRatioMode=QtCore.Qt.KeepAspectRatio, transformMode=QtCore.Qt.SmoothTransformation)
+mic = mic.scaled(2500,600, aspectRatioMode=QtCore.Qt.KeepAspectRatio, transformMode=QtCore.Qt.SmoothTransformation)
 
 ui.micon.setPixmap(QtGui.QPixmap.fromImage(mic))
 
 
-# start
+
+
+
+#start
 
 def prev():
     try:
@@ -209,6 +261,9 @@ def prev():
         pass
 
     finally:
+        logo = QtGui.QImage('logo1.jpeg')
+        logo = logo.scaled(2000, 440, aspectRatioMode=QtCore.Qt.KeepAspectRatio,transformMode=QtCore.Qt.SmoothTransformation)
+        ui.micon.setPixmap(QtGui.QPixmap.fromImage(logo))
         global p
         global pt
         global strc
@@ -217,76 +272,76 @@ def prev():
         global strm
         global strq
         global strw
-        # print(p)
-        # ui2.close()
-        print("P - " + str(p))
+        #print(p)
+        #ui2.close()
+        print("P - "+str(p))
         print("PT - " + str(pt))
 
         pt = p
         co = p.count(1)
-        it = 1
-        if p[0] == 1 and it < 5:
+        it=1
+        if p[0] == 1 and it <5:
             print('cric')
             strc = sc.cricket()
             discp('cb1.jfif', strc, it)
-            it += 1
-            pt[0] = 2
-        if p[1] == 1 and it < 5:
+            it+=1
+            pt[0] =2
+        if p[1] == 1 and it <5:
             strb = sc.billboard()
-            discp('bill1.jfif', strb, it)
+            discp('bill1.jfif',strb , it)
             it += 1
             pt[1] = 2
-        if p[2] == 1 and it < 5:
+        if p[2] == 1 and it <5:
             strn = sc.news()
             discp('toi1.jfif', strn, it)
             it += 1
             pt[2] = 2
-        if p[3] == 1 and it < 5:
+        if p[3] == 1 and it <5:
             strm = sc.mess_menu()
             discp('mm1.jfif', strm, it)
             it += 1
             pt[3] = 2
-        if p[4] == 1 and it < 5:
+        if p[4] == 1 and it <5:
             strq = sc.quote()
             discp('brq1.jfif', strq, it)
             it += 1
-            pt[4] = 2
-        if p[5] == 1 and it < 5:
+            pt[4] =2
+        if p[5] == 1 and it<5:
             strw = sc.weather()
             discp('weather.jfif', strw, it)
             it += 1
-            pt[4] = 2
-        for p1 in range(0, 6):
-            if it < 5:
-                if p[p1] == 0 and p1 == 0:
-                    discp('cb1.jfif', sc.cricket(), it)
-                    it += 1
+            pt[4] =2
+        for p1 in range(0,6) :
+            if  it<5:
+                if p[p1] == 0 and p1 ==0:
+                    discp('cb1.jfif',sc.cricket(), it)
+                    it+=1
                     pt[p1] = 2
                     continue
-                if p[p1] == 0 and p1 == 1:
+                if p[p1] == 0 and p1==1:
                     discp('bill1.jfif', sc.billboard(), it)
                     it += 1
                     pt[p1] = 2
                     continue
-                if p[p1] == 0 and p1 == 2:
-                    discp('toi1.jfif', sc.news(), it)
+                if p[p1] == 0 and p1 ==2:
+                    discp('toi1.jfif',sc.news() , it)
                     it += 1
                     pt[p1] = 2
                     continue
-                if p[p1] == 0 and p1 == 3:
-                    discp('mm1.jfif', sc.mess_menu(), it)
+                if p[p1] == 0 and p1==3:
+                    discp('mm1.jfif',sc.mess_menu() , it)
                     it += 1
                     pt[p1] = 2
                     continue
 
-                if p[p1] == 0 and p1 == 4:
-                    discp('brq1.jfif', sc.quote(), it)
+                if p[p1] == 0 and p1==4 :
+                    discp('brq1.jfif',sc.quote() , it)
                     it += 1
                     pt[p1] = 2
                     continue
-                if p[p1] == 0 and p1 == 5:
-                    discp('weather.jfif', sc.weather(), it)
-                    it += 1
+                if p[p1] == 0 and p1==5:
+                    discp('weather.jfif',sc.weather() , it)
+                    it+=1
                     pt[p1] = 2
         print("P -" + str(p))
         print("PT -" + str(pt))
@@ -294,18 +349,22 @@ def prev():
         ui.show()
 
 
-def discn(im, st, i):
+
+
+
+def discn(im,st,i):
+
     print('a')
-    if i == 1:
+    if i==1 :
         ic = QtGui.QImage(im)
-        ic = ic.scaled(350, 25, aspectRatioMode=QtCore.Qt.KeepAspectRatio, transformMode=QtCore.Qt.SmoothTransformation)
+        ic = ic.scaled(350,25, aspectRatioMode=QtCore.Qt.KeepAspectRatio, transformMode=QtCore.Qt.SmoothTransformation)
         ui2.ic1.setPixmap(QtGui.QPixmap.fromImage(ic))
 
         ui2.txt1.setText(st)
         ui2.txt1.setAlignment(QtCore.Qt.AlignTop)
-        ui2.txt1.setFont(QtGui.QFont('Times', 9))
-        ui2.txt1.move(30, 50)
-    elif i == 2:
+        ui2.txt1.setFont(QtGui.QFont('Times',9))
+        ui2.txt1.move(30,50)
+    elif i==2:
         ic = QtGui.QImage(im)
         ic = ic.scaled(350, 25, aspectRatioMode=QtCore.Qt.KeepAspectRatio, transformMode=QtCore.Qt.SmoothTransformation)
         ui2.ic2.setPixmap(QtGui.QPixmap.fromImage(ic))
@@ -315,8 +374,8 @@ def discn(im, st, i):
         ui2.txt2.setFont(QtGui.QFont('Times', 9))
         ui2.txt2.move(30, 50)
 
-
 def next():
+
     global strc
     global strb
     global strn
@@ -326,24 +385,24 @@ def next():
     global pt
     ite = 1
     print(pt)
-    for p2 in range(0, 6):
-        if pt[p2] == 2:
+    for p2 in range(0,6):
+        if pt[p2] ==2:
             continue
-        if pt[p2] == 1 and p2 == 0:
+        if pt[p2] ==1 and p2 ==0:
             strc = sc.cricket()
-            discn('cb1.jfif', strc, ite)
-            ite += 1
-        if pt[p2] == 1 and p2 == 1:
-            strb = sc.billboard()
-            discn('bill1.jfif', strb, ite)
-            ite += 1
-        if pt[p2] == 1 and p2 == 2:
+            discn('cb1.jfif',strc ,ite)
+            ite+=1
+        if pt[p2] ==1 and p2 ==1:
+            strb =  sc.billboard()
+            discn('bill1.jfif',strb, ite)
+            ite+=1
+        if pt[p2] ==1 and p2 ==2:
             strn = sc.news()
             discn('toi1.jfif', strn, ite)
-            ite += 1
+            ite+=1
         if pt[p2] == 1 and p2 == 3:
             strm = sc.mess_menu()
-            discn('mm1.jfif', strm, ite)
+            discn('mm1.jfif',strm , ite)
             ite += 1
         if pt[p2] == 1 and p2 == 4:
             print('12345')
@@ -352,23 +411,23 @@ def next():
             ite += 1
         if pt[p2] == 1 and p2 == 5:
             strw = sc.weather()
-            discn('weather.jfif', strw, ite)
+            discn('weather.jfif',strw , ite)
             ite += 1
 
-    for p1 in range(0, 6):
-        if pt[p1] == 2:
+    for p1 in range(0,6):
+        if pt[p1] ==2:
             continue
-        if pt[p1] == 0 and p1 == 0:
-            discn('cb1.jfif', sc.cricket(), ite)
-            ite += 1
-        if pt[p1] == 0 and p1 == 1:
-            discn('bill1.jfif', sc.billboard(), ite)
-            ite += 1
-        if pt[p1] == 0 and p1 == 2:
+        if pt[p1] ==0 and p1 ==0:
+            discn('cb1.jfif',sc.cricket() ,ite)
+            ite+=1
+        if pt[p1] ==0 and p1 ==1:
+            discn('bill1.jfif',sc.billboard(), ite)
+            ite+=1
+        if pt[p1] ==0 and p1 ==2:
             discn('toi1.jfif', sc.news(), ite)
-            ite += 1
+            ite+=1
         if pt[p1] == 0 and p1 == 3:
-            discn('mm1.jfif', sc.mess_menu(), ite)
+            discn('mm1.jfif',sc.mess_menu() , ite)
             ite += 1
         if pt[p1] == 0 and p1 == 4:
             discn('brq1.jfif', sc.quote(), ite)
@@ -380,70 +439,81 @@ def next():
             ite += 1
             print("P -" + str(p))
             print("PT -" + str(pt))
+    # logo = QtGui.QImage('logo1.jpeg')
+    # logo = logo.scaled(2000, 440, aspectRatioMode=QtCore.Qt.KeepAspectRatio,transformMode=QtCore.Qt.SmoothTransformation)
+    # ui2.logo.setPixmap(QtGui.QPixmap.fromImage(logo))
+    #
+    # logo2 = QtGui.QImage('logo2.jpeg')
+    # logo2 = logo2.scaled(2000, 440, aspectRatioMode=QtCore.Qt.KeepAspectRatio,transformMode=QtCore.Qt.SmoothTransformation)
+    # ui2.endimg.setPixmap(QtGui.QPixmap.fromImage(logo2))
+
     ui.close()
     ui2.show()
 
 
-# ui.next.clicked.connect(ui.close())
 
-def discpg(im, st, i):
-    if i == 1:
-        ic = QtGui.QImage(im)
-        ic = ic.scaled(350, 25, aspectRatioMode=QtCore.Qt.KeepAspectRatio, transformMode=QtCore.Qt.SmoothTransformation)
-        guests1.ic1.setPixmap(QtGui.QPixmap.fromImage(ic))
+#ui.next.clicked.connect(ui.close())
 
-        guests1.txt1.setText(st)
-        guests1.txt1.setAlignment(QtCore.Qt.AlignTop)
-        guests1.txt1.setFont(QtGui.QFont('Times', 9))
-        guests1.txt1.move(30, 50)
-    elif i == 2:
-        ic = QtGui.QImage(im)
-        ic = ic.scaled(350, 25, aspectRatioMode=QtCore.Qt.KeepAspectRatio, transformMode=QtCore.Qt.SmoothTransformation)
-        guests1.ic2.setPixmap(QtGui.QPixmap.fromImage(ic))
+def discpg(im,st,i):
+   if i==1 :
+       ic = QtGui.QImage(im)
+       ic = ic.scaled(350,25, aspectRatioMode=QtCore.Qt.KeepAspectRatio, transformMode=QtCore.Qt.SmoothTransformation)
+       guests1.ic1.setPixmap(QtGui.QPixmap.fromImage(ic))
 
-        guests1.txt2.setText(st)
-        guests1.txt2.setAlignment(QtCore.Qt.AlignTop)
-        guests1.txt2.setFont(QtGui.QFont('Times', 9))
-        guests1.txt2.move(30, 50)
-    elif i == 3:
-        ic = QtGui.QImage(im)
-        ic = ic.scaled(350, 25, aspectRatioMode=QtCore.Qt.KeepAspectRatio, transformMode=QtCore.Qt.SmoothTransformation)
-        guests1.ic3.setPixmap(QtGui.QPixmap.fromImage(ic))
+       guests1.txt1.setText(st)
+       guests1.txt1.setAlignment(QtCore.Qt.AlignTop)
+       guests1.txt1.setFont(QtGui.QFont('Times',9))
+       guests1.txt1.move(30,50)
+   elif i==2:
+       ic = QtGui.QImage(im)
+       ic = ic.scaled(350, 25, aspectRatioMode=QtCore.Qt.KeepAspectRatio, transformMode=QtCore.Qt.SmoothTransformation)
+       guests1.ic2.setPixmap(QtGui.QPixmap.fromImage(ic))
 
-        guests1.txt3.setText(st)
-        guests1.txt3.setAlignment(QtCore.Qt.AlignTop)
-        guests1.txt3.setFont(QtGui.QFont('Times', 9))
-        guests1.txt3.move(30, 50)
-    elif i == 4:
-        ic = QtGui.QImage(im)
-        ic = ic.scaled(350, 25, aspectRatioMode=QtCore.Qt.KeepAspectRatio, transformMode=QtCore.Qt.SmoothTransformation)
-        guests1.ic4.setPixmap(QtGui.QPixmap.fromImage(ic))
+       guests1.txt2.setText(st)
+       guests1.txt2.setAlignment(QtCore.Qt.AlignTop)
+       guests1.txt2.setFont(QtGui.QFont('Times', 9))
+       guests1.txt2.move(30, 50)
+   elif i==3:
+       ic = QtGui.QImage(im)
+       ic = ic.scaled(350, 25, aspectRatioMode=QtCore.Qt.KeepAspectRatio, transformMode=QtCore.Qt.SmoothTransformation)
+       guests1.ic3.setPixmap(QtGui.QPixmap.fromImage(ic))
 
-        guests1.txt4.setText(st)
-        guests1.txt4.setAlignment(QtCore.Qt.AlignTop)
-        guests1.txt4.setFont(QtGui.QFont('Times', 9))
-        guests1.txt4.move(30, 50)
+       guests1.txt3.setText(st)
+       guests1.txt3.setAlignment(QtCore.Qt.AlignTop)
+       guests1.txt3.setFont(QtGui.QFont('Times', 9))
+       guests1.txt3.move(30, 50)
+   elif i==4:
+       ic = QtGui.QImage(im)
+       ic = ic.scaled(350, 25, aspectRatioMode=QtCore.Qt.KeepAspectRatio, transformMode=QtCore.Qt.SmoothTransformation)
+       guests1.ic4.setPixmap(QtGui.QPixmap.fromImage(ic))
+
+       guests1.txt4.setText(st)
+       guests1.txt4.setAlignment(QtCore.Qt.AlignTop)
+       guests1.txt4.setFont(QtGui.QFont('Times', 9))
+       guests1.txt4.move(30, 50)
+
+def discng(im,st,i):
+   if i==1 :
+       ic = QtGui.QImage(im)
+       ic = ic.scaled(350,25, aspectRatioMode=QtCore.Qt.KeepAspectRatio, transformMode=QtCore.Qt.SmoothTransformation)
+       guests2.ic1.setPixmap(QtGui.QPixmap.fromImage(ic))
+
+       guests2.txt1.setText(st)
+       guests2.txt1.setAlignment(QtCore.Qt.AlignTop)
+       guests2.txt1.setFont(QtGui.QFont('Times',9))
+       guests2.txt1.move(30,50)
+   elif i==2:
+       ic = QtGui.QImage(im)
+       ic = ic.scaled(350, 25, aspectRatioMode=QtCore.Qt.KeepAspectRatio, transformMode=QtCore.Qt.SmoothTransformation)
+       guests2.ic2.setPixmap(QtGui.QPixmap.fromImage(ic))
+
+       guests2.txt2.setText(st)
+       guests2.txt2.setAlignment(QtCore.Qt.AlignTop)
+       guests2.txt2.setFont(QtGui.QFont('Times', 9))
+       guests2.txt2.move(30, 50)
 
 
-def discng(im, st, i):
-    if i == 1:
-        ic = QtGui.QImage(im)
-        ic = ic.scaled(350, 25, aspectRatioMode=QtCore.Qt.KeepAspectRatio, transformMode=QtCore.Qt.SmoothTransformation)
-        guests2.ic1.setPixmap(QtGui.QPixmap.fromImage(ic))
 
-        guests2.txt1.setText(st)
-        guests2.txt1.setAlignment(QtCore.Qt.AlignTop)
-        guests2.txt1.setFont(QtGui.QFont('Times', 9))
-        guests2.txt1.move(30, 50)
-    elif i == 2:
-        ic = QtGui.QImage(im)
-        ic = ic.scaled(350, 25, aspectRatioMode=QtCore.Qt.KeepAspectRatio, transformMode=QtCore.Qt.SmoothTransformation)
-        guests2.ic2.setPixmap(QtGui.QPixmap.fromImage(ic))
-
-        guests2.txt2.setText(st)
-        guests2.txt2.setAlignment(QtCore.Qt.AlignTop)
-        guests2.txt2.setFont(QtGui.QFont('Times', 9))
-        guests2.txt2.move(30, 50)
 
 
 def prevg():
@@ -452,13 +522,24 @@ def prevg():
     discpg('toi1.jfif', sc.news(), 3)
     discpg('mm1.jfif', sc.mess_menu(), 4)
     guests1.show()
-
-
 def nextg():
-    guests1.close()
+
     discng('brq1.jfif', sc.quote(), 1)
     discng('weather.jfif', sc.weather(), 2)
+    guests1.close()
     guests2.show()
+
+if em == 1:
+
+    er.show()
+    em = 0;
+
 
 
 sys.exit(app.exec_())
+
+
+
+
+
+
